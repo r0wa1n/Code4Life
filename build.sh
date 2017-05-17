@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+rm -f target/*.php && cat *.php >> target/main_temp.php && sed 's/<?php//' target/main_temp.php > target/main.php && echo -e "<?php\n$(cat target/main.php)" > target/main.php && rm target/main_temp.php
