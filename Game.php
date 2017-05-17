@@ -6,12 +6,44 @@ class Game
     public $p1, $p2;
     public $samples = [];
     public $projects = [];
-    public $availableA, $availableB, $availableC, $availableD, $availableE;
+    public $availableMolecules = [];
 
     function __construct()
     {
         $this->p1 = new Player();
         $this->p2 = new Player();
+    }
+
+    function next()
+    {
+        // Check if player is running
+        if ($this->p1->isMoving()) {
+            // Action will be ignored
+            echo ("\n");
+        } else {
+            $this->decideWhatToDo();
+        }
+    }
+
+    function decideWhatToDo() {
+        switch ($this->p1->target) {
+            case Module::SAMPLES:
+                $this->p1->sampleModule();
+                break;
+            case Module::DIAGNOSIS:
+                $this->p1->diagnosisModule();
+                break;
+            case Module::MOLECULES:
+                $this->p1->moleculesModule();
+                break;
+            case Module::LABORATORY:
+                $this->p1->laboratoryModule();
+                break;
+            default:
+                // First turn
+                $this->p1->goToModule(Module::SAMPLES);
+                break;
+        }
     }
 
     function scanSamples()
@@ -28,11 +60,11 @@ class Game
                 $sample->rank,
                 $sample->expertiseGain,
                 $sample->health,
-                $sample->costA,
-                $sample->costB,
-                $sample->costC,
-                $sample->costD,
-                $sample->costE
+                $sample->costs['a'],
+                $sample->costs['b'],
+                $sample->costs['c'],
+                $sample->costs['d'],
+                $sample->costs['e']
             );
             $this->samples[$sample->sampleId] = $sample;
         }
@@ -47,16 +79,16 @@ class Game
             $p->target,
             $p->eta,
             $p->score,
-            $p->storageA,
-            $p->storageB,
-            $p->storageC,
-            $p->storageD,
-            $p->storageE,
-            $p->expertiseA,
-            $p->expertiseB,
-            $p->expertiseC,
-            $p->expertiseD,
-            $p->expertiseE
+            $p->storageMolecules['a'],
+            $p->storageMolecules['b'],
+            $p->storageMolecules['c'],
+            $p->storageMolecules['d'],
+            $p->storageMolecules['e'],
+            $p->expertiseMolecules['a'],
+            $p->expertiseMolecules['b'],
+            $p->expertiseMolecules['c'],
+            $p->expertiseMolecules['d'],
+            $p->expertiseMolecules['e']
         );
     }
 
@@ -68,11 +100,11 @@ class Game
         for ($i = 0; $i < $projectCount; $i++) {
             $project = new Project();
             fscanf(STDIN, "%d %d %d %d %d",
-                $project->costA,
-                $project->costB,
-                $project->costC,
-                $project->costD,
-                $project->costE
+                $project->costs['a'],
+                $project->costs['b'],
+                $project->costs['c'],
+                $project->costs['d'],
+                $project->costs['e']
             );
             $project->log();
             $this->projects[] = $project;
@@ -82,22 +114,13 @@ class Game
     function scanAvailableMolecules()
     {
         fscanf(STDIN, "%d %d %d %d %d",
-            $this->availableA,
-            $this->availableB,
-            $this->availableC,
-            $this->availableD,
-            $this->availableE
+            $this->availableMolecules['a'],
+            $this->availableMolecules['b'],
+            $this->availableMolecules['c'],
+            $this->availableMolecules['d'],
+            $this->availableMolecules['e']
         );
 
-        $this->p1->availableA = $this->availableA;
-        $this->p1->availableB = $this->availableB;
-        $this->p1->availableC = $this->availableC;
-        $this->p1->availableD = $this->availableD;
-        $this->p1->availableE = $this->availableE;
-    }
-
-    function decideWhatToDo()
-    {
-        $this->p1->decideWhatToDo();
+        $this->p1->availableMolecules = $this->availableMolecules;
     }
 }

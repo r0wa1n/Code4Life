@@ -15,7 +15,7 @@ while (TRUE)
     $game->scanPlayer($game->p2);
     $game->scanAvailableMolecules();
     $game->scanSamples();
-    $game->decideWhatToDo();
+    $game->next();
 }
 
 
