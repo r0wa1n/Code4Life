@@ -62,8 +62,13 @@ class Player
             echo("CONNECT $firstUndiagnosedSample\n");
         } else if($this->numberOfSampleCarryByUs() < 3) {
             $cloudSampleId = $this->getBestCloudSampleCanBeProduced();
-            if (is_null($cloudSampleId) && $this->hasAtLeastOneSampleCanBeProduced()) {
-                $this->goToModule(Module::MOLECULES);
+            error_log("Cloud sample id : $cloudSampleId");
+            if (is_null($cloudSampleId)){
+                if ($this->hasAtLeastOneSampleCanBeProduced()) {
+                    $this->goToModule(Module::MOLECULES);
+                } else {
+                    $this->goToModule(Module::SAMPLES);
+                }
             } else {
                 echo("CONNECT $cloudSampleId\n");
             }
