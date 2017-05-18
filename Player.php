@@ -111,10 +111,12 @@ class Player
 
     function generateRank()
     {
-        if (!$this->hasEnoughExpertise()) {
-            return 1;
-        } else {
+        if ($this->hasEnoughExpertiseToPassRank(2)) {
             return 2;
+        } else if ($this->hasEnoughExpertiseToPassRank(3)) {
+            return 3;
+        } else {
+            return 1;
         }
     }
 
@@ -171,7 +173,7 @@ class Player
         // TODO sort sample by health and produced
         foreach ($this->samples as $sample) {
             foreach ($sample->costs as $molecule => &$count) {
-                $count -= $this->expertiseMolecules[$molecule];
+                $count = max($count - $this->expertiseMolecules[$molecule], 0);
             }
             if ($sample->carriedBy == 0 && !$sample->completed && $sample->canBePushToLaboratory($this->storageMolecules, $this->getStorageMoleculesUsed())) {
                 $sample->completed = true;
@@ -242,9 +244,13 @@ class Player
         return $samplesCarriedByMe == 3;
     }
 
-    function hasEnoughExpertise()
+    function hasEnoughExpertiseToPassRank($rank)
     {
-        return array_sum($this->expertiseMolecules) >= 6 || !in_array(0, $this->expertiseMolecules);
+        if ($rank == 2) {
+            return array_sum($this->expertiseMolecules) >= 6 || !in_array(0, $this->expertiseMolecules);
+        } else {
+            return array_sum($this->expertiseMolecules) >= 10 && !in_array(0, $this->expertiseMolecules);
+        }
     }
 
     function hasAtLeastOneCompletedSample()
