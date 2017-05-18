@@ -79,7 +79,6 @@ class Player
     function moleculesModule()
     {
         $this->logMySamples();
-        // TODO manage rank 3 samples
         if (($this->isFullOfMolecules() || is_null($this->findWhichMoleculeTakeForSample())) && $this->hasAtLeastOneCompletedSample()) {
             $this->goToModule(Module::LABORATORY);
         } else if (!$this->hasAtLeastOneSampleCanBeProduced()) {
@@ -171,20 +170,51 @@ class Player
 
     function updateSamples()
     {
-        // TODO sort sample by health and produced
-        foreach ($this->samples as $sample) {
-            if ($sample->carriedBy == 0) {
-                foreach ($sample->costs as $molecule => &$count) {
-                    $count = max($count - $this->expertiseMolecules[$molecule], 0);
-                }
-                if (!$sample->completed && $sample->canBePushToLaboratory($this->storageMolecules)) {
-                    error_log('Sample ' . $sample->sampleId . ' is tag completed');
-                    // update storage player
-                    foreach ($sample->costs as $molecule => $count) {
-                        error_log("Old storage of molecule $molecule was " . $this->storageMolecules[$molecule] . ", take $count molecule of sample " . $sample->sampleId);
-                        $this->storageMolecules[$molecule] -= $count;
+        // Check if all my samples are diagnosed
+        if (is_null($this->getFirstUndiagnosedSample())) {
+            $cacheSampleCanBeProduced = [];
+            foreach ($this->samples as $sample) {
+                $cacheSampleCanBeProduced[$sample->sampleId] = $sample->canBeProduced($this->availableMolecules, $this->storageMolecules);
+            }
+            uasort($this->samples, function ($s1, $s2) use ($cacheSampleCanBeProduced) {
+                if ($s1->carriedBy == 0 && $s2->carriedBy != 0) {
+                    return 1;
+                } else if ($s1->carriedBy != 0 && $s2->carriedBy == 0) {
+                    return -1;
+                } else if ($s1->carriedBy != 0 && $s2->carriedBy != 0) {
+                    return 0;
+                } else {
+                    if ($cacheSampleCanBeProduced[$s1->sampleId] && !$cacheSampleCanBeProduced[$s2->sampleId]) {
+                        return 1;
+                    } else if (!$cacheSampleCanBeProduced[$s1->sampleId] && $cacheSampleCanBeProduced[$s2->sampleId]) {
+                        return -1;
+                    } else if (!$cacheSampleCanBeProduced[$s1->sampleId] && !$cacheSampleCanBeProduced[$s2->sampleId]) {
+                        return 0;
+                    } else {
+                        if ($s1->health == $s2->health) {
+                            return 0;
+                        }
+                        return ($s1->health > $s2->health) ? -1 : 1;
                     }
-                    $sample->completed = true;
+                }
+            });
+            foreach ($this->samples as $sample) {
+                if ($sample->carriedBy == 0) {
+                    foreach ($sample->costs as $molecule => &$count) {
+                        $count = max($count - $this->expertiseMolecules[$molecule], 0);
+                    }
+                    if (!$sample->completed && $sample->canBePushToLaboratory($this->storageMolecules)) {
+                        error_log('Sample ' . $sample->sampleId . ' is tag completed');
+                        // update storage player
+                        foreach ($sample->costs as $molecule => $count) {
+                            if ($count > 0) {
+                                error_log("Old storage of molecule $molecule was " . $this->storageMolecules[$molecule] . ", take $count molecule of sample " . $sample->sampleId);
+                                $this->storageMolecules[$molecule] -= $count;
+                            }
+                        }
+                        $sample->completed = true;
+                        $this->storageMolecules[strtolower($sample->expertiseGain)]++;
+                    }
                 }
             }
         }
@@ -248,7 +278,7 @@ class Player
 
     function isFullOfMolecules()
     {
-        $isFull = array_sum($this->storageMolecules) == 10;
+        $isFull = array_sum($this->storageMolecules) >= 10;
         if ($isFull) {
             error_log('Player is full of molecules');
         }

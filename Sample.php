@@ -12,7 +12,7 @@ class Sample
 
     function log()
     {
-        error_log("Sample need :");
+        error_log("Sample " . $this->sampleId . " need (health: " . $this->health . ") needs:");
         error_log("    A :" . $this->costs['a']);
         error_log("    B :" . $this->costs['b']);
         error_log("    C :" . $this->costs['c']);
