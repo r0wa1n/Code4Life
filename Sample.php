@@ -55,6 +55,7 @@ class Sample
 
     function getFirstMoleculeMissing($storageMolecules)
     {
+        $this->shuffleCosts();
         foreach ($this->costs as $molecule => $count) {
             if ($count > $storageMolecules[$molecule]) {
                 return strtoupper($molecule);
@@ -62,5 +63,10 @@ class Sample
         }
 
         return null;
+    }
+
+    function shuffleCosts()
+    {
+        uksort($this->costs, function() { return rand() > rand(); });
     }
 }

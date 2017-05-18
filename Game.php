@@ -4,6 +4,7 @@ class Game
 {
 
     public $p1, $p2;
+    public $turn = 0;
     public $samples = [];
     public $projects = [];
     public $availableMolecules = [];
@@ -16,6 +17,7 @@ class Game
 
     function next()
     {
+        $this->turn++;
         // Check if player is running
         if ($this->p1->isMoving()) {
             // Action will be ignored
