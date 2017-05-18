@@ -13,6 +13,8 @@ while (TRUE)
 {
     $game->scanPlayer($game->p1);
     $game->scanPlayer($game->p2);
+    $game->p1->otherPlayer = $game->p2;
+
     $game->scanAvailableMolecules();
     $game->scanSamples();
     $game->next();

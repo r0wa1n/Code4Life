@@ -7,12 +7,14 @@ class Player
     public $score;
     public $eta;
     public $storageMolecules = [];
-    public $sumStorage;
     public $expertiseMolecules = [];
     public $availableMolecules = [];
+    public $otherPlayer;
 
     // custom properties
     public $samples = [];
+    public $sumStorage;
+    public $currentRank;
 
     public $matrice = [
         'START_POS' => [
@@ -83,15 +85,16 @@ class Player
         if (($this->isFullOfMolecules() || is_null($this->findWhichMoleculeTakeForSample())) && $this->hasAtLeastOneCompletedSample()) {
             $this->goToModule(Module::LABORATORY);
         } else if (!$this->hasAtLeastOneSampleCanBeProduced()) {
-            $this->goToModule(Module::DIAGNOSIS);
-        } else {
-            $moleculeToTake = $this->findWhichMoleculeTakeForSample();
-            // TODO count number of turn he's waiting, and at 7 turns for example, go rage quit
-            if (is_null($moleculeToTake)) {
-                echo("WAIT\n");
+            if ($this->otherPlayer->target == Module::LABORATORY) {
+                echo ("WAIT\n");
             } else {
-                echo("CONNECT $moleculeToTake\n");
+                $this->goToModule(Module::DIAGNOSIS);
             }
+        } else if(!$this->isFullOfMolecules()) {
+            $moleculeToTake = $this->findWhichMoleculeTakeForSample();
+            echo("CONNECT $moleculeToTake\n");
+        } else {
+            $this->goToModule(Module::DIAGNOSIS);
         }
     }
 
@@ -112,13 +115,16 @@ class Player
     function generateRank()
     {
         $sumExpertise = array_sum($this->expertiseMolecules);
-        if ($sumExpertise >= 9) {
-            return 3;
-        } else if ($sumExpertise >= 6) {
-            return 2;
+        if ($sumExpertise >= 12) {
+            $rank = 3;
+        } else if ($sumExpertise >= 8) {
+            $rank = 2;
         } else {
-            return 1;
+            $rank = 1;
         }
+        $this->currentRank = $rank;
+
+        return $rank;
     }
 
     function getFirstUndiagnosedSample()
@@ -179,16 +185,16 @@ class Player
             }
             uasort($this->samples, function ($s1, $s2) use ($cacheSampleCanBeProduced) {
                 if ($s1->carriedBy == 0 && $s2->carriedBy != 0) {
-                    return 1;
-                } else if ($s1->carriedBy != 0 && $s2->carriedBy == 0) {
                     return -1;
+                } else if ($s1->carriedBy != 0 && $s2->carriedBy == 0) {
+                    return 1;
                 } else if ($s1->carriedBy != 0 && $s2->carriedBy != 0) {
                     return 0;
                 } else {
                     if ($cacheSampleCanBeProduced[$s1->sampleId] && !$cacheSampleCanBeProduced[$s2->sampleId]) {
-                        return 1;
-                    } else if (!$cacheSampleCanBeProduced[$s1->sampleId] && $cacheSampleCanBeProduced[$s2->sampleId]) {
                         return -1;
+                    } else if (!$cacheSampleCanBeProduced[$s1->sampleId] && $cacheSampleCanBeProduced[$s2->sampleId]) {
+                        return 1;
                     } else if (!$cacheSampleCanBeProduced[$s1->sampleId] && !$cacheSampleCanBeProduced[$s2->sampleId]) {
                         return 0;
                     } else {
@@ -209,11 +215,12 @@ class Player
                         // update storage player
                         foreach ($sample->costs as $molecule => $count) {
                             if ($count > 0) {
-                                error_log("Old storage of molecule $molecule was " . $this->storageMolecules[$molecule] . ", take $count molecule of sample " . $sample->sampleId);
+                                error_log("Old storage of molecule $molecule was " . $this->storageMolecules[$molecule] . ", take $count molecules of sample " . $sample->sampleId);
                                 $this->storageMolecules[$molecule] -= $count;
                             }
                         }
                         $sample->completed = true;
+                        error_log('Gain of molecule ' . $sample->expertiseGain);
                         $this->storageMolecules[strtolower($sample->expertiseGain)]++;
                     }
                 }
