@@ -12,9 +12,7 @@ class Sample
 
     function log()
     {
-        error_log("Player take a new sample: " . $this->sampleId);
         error_log("Sample need :");
-
         error_log("    A :" . $this->costs['a']);
         error_log("    B :" . $this->costs['b']);
         error_log("    C :" . $this->costs['c']);
@@ -22,22 +20,22 @@ class Sample
         error_log("    E :" . $this->costs['e']);
     }
 
-    function canBePushToLaboratory($storageMolecules, $storageMoleculesUsed)
+    function canBePushToLaboratory($storageMolecules)
     {
-        return $this->costs['a'] <= $storageMolecules['a'] - $storageMoleculesUsed['a']
-            && $this->costs['b'] <= $storageMolecules['b'] - $storageMoleculesUsed['b']
-            && $this->costs['c'] <= $storageMolecules['c'] - $storageMoleculesUsed['c']
-            && $this->costs['d'] <= $storageMolecules['d'] - $storageMoleculesUsed['d']
-            && $this->costs['e'] <= $storageMolecules['e'] - $storageMoleculesUsed['e'];
+        return $this->costs['a'] <= $storageMolecules['a']
+            && $this->costs['b'] <= $storageMolecules['b']
+            && $this->costs['c'] <= $storageMolecules['c']
+            && $this->costs['d'] <= $storageMolecules['d']
+            && $this->costs['e'] <= $storageMolecules['e'];
     }
 
-    function canBeProduced($availableMolecules, $storageMolecules, $storageMoleculesUsed)
+    function canBeProduced($availableMolecules, $storageMolecules)
     {
-        $canBeProduced = $this->costs['a'] <= $storageMolecules['a'] - $storageMoleculesUsed['a'] + $availableMolecules['a']
-            && $this->costs['b'] <= $storageMolecules['b'] - $storageMoleculesUsed['b'] + $availableMolecules['b']
-            && $this->costs['c'] <= $storageMolecules['c'] - $storageMoleculesUsed['c'] + $availableMolecules['c']
-            && $this->costs['d'] <= $storageMolecules['d'] - $storageMoleculesUsed['d'] + $availableMolecules['d']
-            && $this->costs['e'] <= $storageMolecules['e'] - $storageMoleculesUsed['e'] + $availableMolecules['e'];
+        $canBeProduced = $this->costs['a'] <= $storageMolecules['a'] + $availableMolecules['a']
+            && $this->costs['b'] <= $storageMolecules['b'] + $availableMolecules['b']
+            && $this->costs['c'] <= $storageMolecules['c'] + $availableMolecules['c']
+            && $this->costs['d'] <= $storageMolecules['d'] + $availableMolecules['d']
+            && $this->costs['e'] <= $storageMolecules['e'] + $availableMolecules['e'];
 
         error_log("Sample " . $this->sampleId . ' ' . (($canBeProduced) ? 'can' : 'can\'t') . ' be produced');
 

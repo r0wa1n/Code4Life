@@ -111,10 +111,11 @@ class Player
 
     function generateRank()
     {
-        if ($this->hasEnoughExpertiseToPassRank(2)) {
-            return 2;
-        } else if ($this->hasEnoughExpertiseToPassRank(3)) {
+        $sumExpertise = array_sum($this->expertiseMolecules);
+        if ($sumExpertise >= 9) {
             return 3;
+        } else if ($sumExpertise >= 6) {
+            return 2;
         } else {
             return 1;
         }
@@ -158,7 +159,7 @@ class Player
         foreach ($this->samples as $sample) {
             if ($sample->carriedBy == 0
                 && !$sample->completed
-                && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules, $this->getStorageMoleculesUsed())
+                && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules)
             ) {
                 return $sample->getFirstMoleculeMissing($this->storageMolecules);
             }
@@ -172,41 +173,28 @@ class Player
     {
         // TODO sort sample by health and produced
         foreach ($this->samples as $sample) {
-            foreach ($sample->costs as $molecule => &$count) {
-                $count = max($count - $this->expertiseMolecules[$molecule], 0);
-            }
-            if ($sample->carriedBy == 0 && !$sample->completed && $sample->canBePushToLaboratory($this->storageMolecules, $this->getStorageMoleculesUsed())) {
-                $sample->completed = true;
-            }
-        }
-    }
-
-    function getStorageMoleculesUsed()
-    {
-        $combineMolecules = [
-            'a' => 0,
-            'b' => 0,
-            'c' => 0,
-            'd' => 0,
-            'e' => 0
-        ];
-        // Combine all molecules of each completed samples
-        foreach ($this->samples as $sample) {
-            if ($sample->carriedBy == 0 && $sample->completed) {
-                foreach ($sample->costs as $molecule => $count) {
-                    $combineMolecules[$molecule] += $count;
+            if ($sample->carriedBy == 0) {
+                foreach ($sample->costs as $molecule => &$count) {
+                    $count = max($count - $this->expertiseMolecules[$molecule], 0);
+                }
+                if (!$sample->completed && $sample->canBePushToLaboratory($this->storageMolecules)) {
+                    error_log('Sample ' . $sample->sampleId . ' is tag completed');
+                    // update storage player
+                    foreach ($sample->costs as $molecule => $count) {
+                        error_log("Old storage of molecule $molecule was " . $this->storageMolecules[$molecule] . ", take $count molecule of sample " . $sample->sampleId);
+                        $this->storageMolecules[$molecule] -= $count;
+                    }
+                    $sample->completed = true;
                 }
             }
         }
-
-        return $combineMolecules;
     }
 
     function hasAtLeastOneSampleCanBeProduced()
     {
         foreach ($this->samples as $sample) {
             if ($sample->carriedBy == 0
-                && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules, $this->getStorageMoleculesUsed())
+                && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules)
             ) {
                 error_log('Sample ' . $sample->sampleId . ' can be produced');
 
@@ -223,7 +211,7 @@ class Player
         $bestId = null;
         foreach ($this->samples as $sample) {
             if ($sample->carriedBy == -1
-                && $sample->health > $best && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules, $this->getStorageMoleculesUsed())
+                && $sample->health > $best && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules)
             ) {
                 $best = $sample->health;
                 $bestId = $sample->sampleId;
@@ -242,15 +230,6 @@ class Player
         }
 
         return $samplesCarriedByMe == 3;
-    }
-
-    function hasEnoughExpertiseToPassRank($rank)
-    {
-        if ($rank == 2) {
-            return array_sum($this->expertiseMolecules) >= 6 || !in_array(0, $this->expertiseMolecules);
-        } else {
-            return array_sum($this->expertiseMolecules) >= 10 && !in_array(0, $this->expertiseMolecules);
-        }
     }
 
     function hasAtLeastOneCompletedSample()
