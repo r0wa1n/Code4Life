@@ -19,13 +19,14 @@ class Game
         // Check if player is running
         if ($this->p1->isMoving()) {
             // Action will be ignored
-            echo ("\n");
+            echo($this->generateRandomWord() . "\n");
         } else {
             $this->decideWhatToDo();
         }
     }
 
-    function decideWhatToDo() {
+    function decideWhatToDo()
+    {
         switch ($this->p1->target) {
             case Module::SAMPLES:
                 $this->p1->sampleModule();
@@ -124,5 +125,22 @@ class Game
         );
 
         $this->p1->availableMolecules = $this->availableMolecules;
+    }
+
+    function generateRandomWord()
+    {
+        $sentence = [
+            'Astalavista baby',
+            'Yo bien ou bien ?',
+            'i want money',
+            'svp, argent !!',
+            'viens ici !',
+            'toi et moi <3',
+            'robots sucks',
+            'trololo',
+            'niancaaaaaaat'
+        ];
+
+        return $sentence[rand(0, count($sentence) - 1)];
     }
 }

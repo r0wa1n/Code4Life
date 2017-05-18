@@ -86,11 +86,11 @@ class Player
             $this->goToModule(Module::LABORATORY);
         } else if (!$this->hasAtLeastOneSampleCanBeProduced()) {
             if ($this->otherPlayer->target == Module::LABORATORY) {
-                echo ("WAIT\n");
+                echo("WAIT\n");
             } else {
                 $this->goToModule(Module::DIAGNOSIS);
             }
-        } else if(!$this->isFullOfMolecules()) {
+        } else if (!$this->isFullOfMolecules()) {
             $moleculeToTake = $this->findWhichMoleculeTakeForSample();
             echo("CONNECT $moleculeToTake\n");
         } else {
@@ -116,7 +116,11 @@ class Player
     {
         $sumExpertise = array_sum($this->expertiseMolecules);
         if ($sumExpertise >= 12) {
-            $rank = 3;
+            if ($this->countSampleOfRank(3) == 2) {
+                $rank = 1;
+            } else {
+                $rank = 3;
+            }
         } else if ($sumExpertise >= 8) {
             $rank = 2;
         } else {
@@ -125,6 +129,18 @@ class Player
         $this->currentRank = $rank;
 
         return $rank;
+    }
+
+    function countSampleOfRank($rank)
+    {
+        $count = 0;
+        foreach ($this->samples as $sample) {
+            if ($sample->carriedBy == 0 && $sample->rank == $rank) {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 
     function getFirstUndiagnosedSample()
