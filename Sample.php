@@ -21,35 +21,36 @@ class Sample
         error_log("    E :" . $this->costs['e']);
     }
 
-    function isCompleted($storageMolecules, $expertiseMolecules)
+    function isCompleted($storageMolecules, $expertiseMolecules, $completedSampleMolecules)
     {
-        return $this->costs['a'] <= $storageMolecules['a'] + $expertiseMolecules['a']
-            && $this->costs['b'] <= $storageMolecules['b'] + $expertiseMolecules['b']
-            && $this->costs['c'] <= $storageMolecules['c'] + $expertiseMolecules['c']
-            && $this->costs['d'] <= $storageMolecules['d'] + $expertiseMolecules['d']
-            && $this->costs['e'] <= $storageMolecules['e'] + $expertiseMolecules['e'];
+        return $this->costs['a'] <= $storageMolecules['a'] + $expertiseMolecules['a'] - $completedSampleMolecules['a']
+            && $this->costs['b'] <= $storageMolecules['b'] + $expertiseMolecules['b'] - $completedSampleMolecules['b']
+            && $this->costs['c'] <= $storageMolecules['c'] + $expertiseMolecules['c'] - $completedSampleMolecules['c']
+            && $this->costs['d'] <= $storageMolecules['d'] + $expertiseMolecules['d'] - $completedSampleMolecules['d']
+            && $this->costs['e'] <= $storageMolecules['e'] + $expertiseMolecules['e'] - $completedSampleMolecules['e'];
     }
 
-    function canBeProduced($availableMolecules, $expertiseMolecules)
+    function canBeProduced($availableMolecules, $expertiseMolecules, $storageMolecules, $completedSampleMolecules)
     {
-        $canBeProduced = $this->costs['a'] <= $availableMolecules['a'] + $expertiseMolecules['a']
-            && $this->costs['b'] <= $availableMolecules['b'] + $expertiseMolecules['b']
-            && $this->costs['c'] <= $availableMolecules['c'] + $expertiseMolecules['c']
-            && $this->costs['d'] <= $availableMolecules['d'] + $expertiseMolecules['d']
-            && $this->costs['e'] <= $availableMolecules['e'] + $expertiseMolecules['e'];
+        $canBeProduced = $this->costs['a'] <= $expertiseMolecules['a'] - $completedSampleMolecules['a'] + $storageMolecules['a'] + $availableMolecules['a']
+            && $this->costs['b'] <= $expertiseMolecules['b'] - $completedSampleMolecules['b'] + $storageMolecules['b'] + $availableMolecules['b']
+            && $this->costs['c'] <= $expertiseMolecules['c'] - $completedSampleMolecules['c'] + $storageMolecules['c'] + $availableMolecules['c']
+            && $this->costs['d'] <= $expertiseMolecules['d'] - $completedSampleMolecules['d'] + $storageMolecules['d'] + $availableMolecules['d']
+            && $this->costs['e'] <= $expertiseMolecules['e'] - $completedSampleMolecules['e'] + $storageMolecules['e'] + $availableMolecules['e'];
+
         error_log("Sample " . $this->sampleId . ' ' . (($canBeProduced) ? 'can' : 'can\'t') . ' be produced');
 
         return $canBeProduced;
     }
 
-    function getFirstMoleculeMissing($storageMolecules, $expertiseMolecules) {
+    function getFirstMoleculeMissing($storageMolecules, $expertiseMolecules)
+    {
         foreach ($this->costs as $molecule => $count) {
-            error_log("Cost of molecule $molecule: $count");
-            error_log("  My storage + expertise = " . ($storageMolecules[$molecule] + $expertiseMolecules[$molecule]));
-            if($count > ($storageMolecules[$molecule] + $expertiseMolecules[$molecule])) {
+            if ($count > ($storageMolecules[$molecule] + $expertiseMolecules[$molecule])) {
                 return strtoupper($molecule);
             }
         }
+
         return null;
     }
 }
