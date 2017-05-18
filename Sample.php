@@ -30,13 +30,13 @@ class Sample
             && $this->costs['e'] <= $storageMolecules['e'] + $expertiseMolecules['e'];
     }
 
-    function canBeProduced($availableMolecules, $expertiseMolecules)
+    function canBeProduced($availableMolecules, $expertiseMolecules, $storageMolecules)
     {
-        $canBeProduced = $this->costs['a'] <= $availableMolecules['a'] + $expertiseMolecules['a']
-            && $this->costs['b'] <= $availableMolecules['b'] + $expertiseMolecules['b']
-            && $this->costs['c'] <= $availableMolecules['c'] + $expertiseMolecules['c']
-            && $this->costs['d'] <= $availableMolecules['d'] + $expertiseMolecules['d']
-            && $this->costs['e'] <= $availableMolecules['e'] + $expertiseMolecules['e'];
+        $canBeProduced = $this->costs['a'] <= $storageMolecules['a'] + $availableMolecules['a'] + $expertiseMolecules['a']
+            && $this->costs['b'] <= $storageMolecules['b'] + $availableMolecules['b'] + $expertiseMolecules['b']
+            && $this->costs['c'] <= $storageMolecules['c'] + $availableMolecules['c'] + $expertiseMolecules['c']
+            && $this->costs['d'] <= $storageMolecules['d'] + $availableMolecules['d'] + $expertiseMolecules['d']
+            && $this->costs['e'] <= $storageMolecules['e'] + $availableMolecules['e'] + $expertiseMolecules['e'];
         error_log("Sample " . $this->sampleId . ' ' . (($canBeProduced) ? 'can' : 'can\'t') . ' be produced');
 
         return $canBeProduced;

@@ -59,21 +59,26 @@ class Player
         $firstUndiagnosedSample = $this->getFirstUndiagnosedSample();
         if (!is_null($firstUndiagnosedSample)) {
             echo("CONNECT $firstUndiagnosedSample\n");
-        } else if ($this->atLeastOneSampleCanBeProduced()) {
+        } else if ($this->hasAtLeastOneSampleCanBeProduced()) {
             $this->goToModule(Module::MOLECULES);
         } else {
             $firstDiagnosedSample = $this->getFirstDiagnosedSample();
             if (!is_null($firstDiagnosedSample)) {
                 echo("CONNECT $firstDiagnosedSample\n");
             } else {
-                $this->goToModule(Module::SAMPLES);
+                $cloudSampleId = $this->getBestCloudSampleCanBeProduced();
+                if(is_null($cloudSampleId)) {
+                    $this->goToModule(Module::SAMPLES);
+                } else {
+                    echo("CONNECT $cloudSampleId\n");
+                }
             }
         }
     }
 
     function moleculesModule()
     {
-        if (!$this->atLeastOneSampleCanBeProduced()) {
+        if (!$this->hasAtLeastOneSampleCanBeProduced()) {
             $this->goToModule(Module::DIAGNOSIS);
         } else if (!$this->hasAtLeastOneCompletedSample()) {
             $moleculeToTake = $this->findWhichMoleculeTakeForSample();
@@ -92,8 +97,10 @@ class Player
         if ($this->hasAtLeastOneCompletedSample()) {
             $completedSample = $this->getFirstCompletedSample();
             echo("CONNECT $completedSample\n");
-        } else if ($this->atLeastOneSampleCanBeProduced()) {
+        } else if ($this->hasAtLeastOneSampleCanBeProduced()) {
             $this->goToModule(Module::MOLECULES);
+        } else if(!is_null($this->getBestCloudSampleCanBeProduced())){
+            $this->goToModule(Module::DIAGNOSIS);
         } else {
             $this->goToModule(Module::SAMPLES);
         }
@@ -142,24 +149,38 @@ class Player
     function findWhichMoleculeTakeForSample()
     {
         foreach ($this->samples as $sample) {
-            if ($sample->carriedBy == 0 && $sample->canBeProduced($this->availableMolecules, $this->expertiseMolecules)) {
+            if ($sample->carriedBy == 0 && $sample->canBeProduced($this->availableMolecules, $this->expertiseMolecules, $this->storageMolecules)) {
                 return $sample->getFirstMoleculeMissing($this->storageMolecules, $this->expertiseMolecules);
             }
         }
         return null;
     }
 
-    function atLeastOneSampleCanBeProduced()
+    function hasAtLeastOneSampleCanBeProduced()
     {
         foreach ($this->samples as $sample) {
             if ($sample->carriedBy == 0
-                && $sample->canBeProduced($this->availableMolecules, $this->expertiseMolecules)
+                && $sample->canBeProduced($this->availableMolecules, $this->expertiseMolecules, $this->storageMolecules)
             ) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    function getBestCloudSampleCanBeProduced() {
+        $best = PHP_INT_MIN;
+        $bestId = null;
+        foreach ($this->samples as $sample) {
+            if ($sample->carriedBy == -1
+                && $sample->health > $best && $sample->canBeProduced($this->availableMolecules, $this->expertiseMolecules, $this->storageMolecules)
+            ) {
+                $best = $sample->health;
+                $bestId = $sample->sampleId;
+            }
+        }
+        return $bestId;
     }
 
     function hasEnoughSamplesToDiagnosed()
