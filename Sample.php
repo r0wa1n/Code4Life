@@ -8,6 +8,7 @@ class Sample
     public $expertiseGain;
     public $health;
     public $costs;
+    public $completed = false;
 
     function log()
     {
@@ -21,32 +22,32 @@ class Sample
         error_log("    E :" . $this->costs['e']);
     }
 
-    function isCompleted($storageMolecules, $expertiseMolecules, $completedSampleMolecules)
+    function canBePushToLaboratory($storageMolecules, $storageMoleculesUsed)
     {
-        return $this->costs['a'] <= $storageMolecules['a'] + $expertiseMolecules['a'] - $completedSampleMolecules['a']
-            && $this->costs['b'] <= $storageMolecules['b'] + $expertiseMolecules['b'] - $completedSampleMolecules['b']
-            && $this->costs['c'] <= $storageMolecules['c'] + $expertiseMolecules['c'] - $completedSampleMolecules['c']
-            && $this->costs['d'] <= $storageMolecules['d'] + $expertiseMolecules['d'] - $completedSampleMolecules['d']
-            && $this->costs['e'] <= $storageMolecules['e'] + $expertiseMolecules['e'] - $completedSampleMolecules['e'];
+        return $this->costs['a'] <= $storageMolecules['a'] - $storageMoleculesUsed['a']
+            && $this->costs['b'] <= $storageMolecules['b'] - $storageMoleculesUsed['b']
+            && $this->costs['c'] <= $storageMolecules['c'] - $storageMoleculesUsed['c']
+            && $this->costs['d'] <= $storageMolecules['d'] - $storageMoleculesUsed['d']
+            && $this->costs['e'] <= $storageMolecules['e'] - $storageMoleculesUsed['e'];
     }
 
-    function canBeProduced($availableMolecules, $expertiseMolecules, $storageMolecules, $completedSampleMolecules)
+    function canBeProduced($availableMolecules, $storageMolecules, $storageMoleculesUsed)
     {
-        $canBeProduced = $this->costs['a'] <= $expertiseMolecules['a'] - $completedSampleMolecules['a'] + $storageMolecules['a'] + $availableMolecules['a']
-            && $this->costs['b'] <= $expertiseMolecules['b'] - $completedSampleMolecules['b'] + $storageMolecules['b'] + $availableMolecules['b']
-            && $this->costs['c'] <= $expertiseMolecules['c'] - $completedSampleMolecules['c'] + $storageMolecules['c'] + $availableMolecules['c']
-            && $this->costs['d'] <= $expertiseMolecules['d'] - $completedSampleMolecules['d'] + $storageMolecules['d'] + $availableMolecules['d']
-            && $this->costs['e'] <= $expertiseMolecules['e'] - $completedSampleMolecules['e'] + $storageMolecules['e'] + $availableMolecules['e'];
+        $canBeProduced = $this->costs['a'] <= $storageMolecules['a'] - $storageMoleculesUsed['a'] + $availableMolecules['a']
+            && $this->costs['b'] <= $storageMolecules['b'] - $storageMoleculesUsed['b'] + $availableMolecules['b']
+            && $this->costs['c'] <= $storageMolecules['c'] - $storageMoleculesUsed['c'] + $availableMolecules['c']
+            && $this->costs['d'] <= $storageMolecules['d'] - $storageMoleculesUsed['d'] + $availableMolecules['d']
+            && $this->costs['e'] <= $storageMolecules['e'] - $storageMoleculesUsed['e'] + $availableMolecules['e'];
 
         error_log("Sample " . $this->sampleId . ' ' . (($canBeProduced) ? 'can' : 'can\'t') . ' be produced');
 
         return $canBeProduced;
     }
 
-    function getFirstMoleculeMissing($storageMolecules, $expertiseMolecules)
+    function getFirstMoleculeMissing($storageMolecules)
     {
         foreach ($this->costs as $molecule => $count) {
-            if ($count > ($storageMolecules[$molecule] + $expertiseMolecules[$molecule])) {
+            if ($count > $storageMolecules[$molecule]) {
                 return strtoupper($molecule);
             }
         }

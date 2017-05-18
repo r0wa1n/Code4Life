@@ -70,6 +70,7 @@ class Game
         }
 
         $this->p1->samples = $this->samples;
+        $this->p1->updateSamples();
         $this->p2->samples = $this->samples;
     }
 

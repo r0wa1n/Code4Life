@@ -12,7 +12,6 @@ class Player
 
     // custom properties
     public $samples = [];
-    public $completedSamples = [];
 
     public $matrice = [
         'START_POS' => [
@@ -80,9 +79,6 @@ class Player
     function moleculesModule()
     {
         $this->logMySamples();
-        error_log('My completed samples: ' . implode(' - ', $this->completedSamples));
-        $this->updateCompletedSamples();
-
         // TODO manage rank 3 samples
         if (($this->isFullOfMolecules() || is_null($this->findWhichMoleculeTakeForSample())) && $this->hasAtLeastOneCompletedSample()) {
             $this->goToModule(Module::LABORATORY);
@@ -146,17 +142,23 @@ class Player
 
     function getFirstCompletedSample()
     {
-        return array_shift($this->completedSamples);
+        foreach ($this->samples as $sample) {
+            if ($sample->carriedBy == 0 && $sample->completed) {
+                return $sample->sampleId;
+            }
+        }
+
+        return null;
     }
 
     function findWhichMoleculeTakeForSample()
     {
         foreach ($this->samples as $sample) {
             if ($sample->carriedBy == 0
-                && !in_array($sample->sampleId, $this->completedSamples)
-                && $sample->canBeProduced($this->availableMolecules, $this->expertiseMolecules, $this->storageMolecules, $this->getCompletedSampleMolecules())
+                && !$sample->completed
+                && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules, $this->getStorageMoleculesUsed())
             ) {
-                return $sample->getFirstMoleculeMissing($this->storageMolecules, $this->expertiseMolecules);
+                return $sample->getFirstMoleculeMissing($this->storageMolecules);
             }
         }
 
@@ -164,19 +166,20 @@ class Player
         return null;
     }
 
-    function updateCompletedSamples()
+    function updateSamples()
     {
+        // TODO sort sample by health and produced
         foreach ($this->samples as $sample) {
-            if ($sample->carriedBy == 0
-                && !in_array($sample->sampleId, $this->completedSamples)
-                && $sample->isCompleted($this->storageMolecules, $this->expertiseMolecules, $this->getCompletedSampleMolecules())
-            ) {
-                $this->completedSamples[] = $sample->sampleId;
+            foreach ($sample->costs as $molecule => &$count) {
+                $count -= $this->expertiseMolecules[$molecule];
+            }
+            if ($sample->carriedBy == 0 && !$sample->completed && $sample->canBePushToLaboratory($this->storageMolecules, $this->getStorageMoleculesUsed())) {
+                $sample->completed = true;
             }
         }
     }
 
-    function getCompletedSampleMolecules()
+    function getStorageMoleculesUsed()
     {
         $combineMolecules = [
             'a' => 0,
@@ -186,9 +189,11 @@ class Player
             'e' => 0
         ];
         // Combine all molecules of each completed samples
-        foreach ($this->completedSamples as $sampleId) {
-            foreach ($this->samples[$sampleId]->costs as $molecule => $count) {
-                $combineMolecules[$molecule] += $count - $this->expertiseMolecules[$molecule];
+        foreach ($this->samples as $sample) {
+            if ($sample->carriedBy == 0 && $sample->completed) {
+                foreach ($sample->costs as $molecule => $count) {
+                    $combineMolecules[$molecule] += $count;
+                }
             }
         }
 
@@ -199,8 +204,10 @@ class Player
     {
         foreach ($this->samples as $sample) {
             if ($sample->carriedBy == 0
-                && $sample->canBeProduced($this->availableMolecules, $this->expertiseMolecules, $this->storageMolecules)
+                && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules, $this->getStorageMoleculesUsed())
             ) {
+                error_log('Sample ' . $sample->sampleId . ' can be produced');
+
                 return true;
             }
         }
@@ -210,11 +217,11 @@ class Player
 
     function getBestCloudSampleCanBeProduced()
     {
-        $best = PHP_INT_MIN;
+        $best = 0;
         $bestId = null;
         foreach ($this->samples as $sample) {
             if ($sample->carriedBy == -1
-                && $sample->health > $best && $sample->canBeProduced($this->availableMolecules, $this->expertiseMolecules, $this->storageMolecules)
+                && $sample->health > $best && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules, $this->getStorageMoleculesUsed())
             ) {
                 $best = $sample->health;
                 $bestId = $sample->sampleId;
@@ -242,14 +249,7 @@ class Player
 
     function hasAtLeastOneCompletedSample()
     {
-//        foreach ($this->samples as $sample) {
-//            if ($sample->carriedBy == 0 && $sample->isCompleted($this->storageMolecules, $this->expertiseMolecules)) {
-//                return true;
-//            }
-//        }
-//
-//        return false;
-        return count($this->completedSamples) >= 1;
+        return !is_null($this->getFirstCompletedSample());
     }
 
     function logMySamples()
