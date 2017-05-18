@@ -7,6 +7,7 @@ class Player
     public $score;
     public $eta;
     public $storageMolecules = [];
+    public $sumStorage;
     public $expertiseMolecules = [];
     public $availableMolecules = [];
 
@@ -278,7 +279,7 @@ class Player
 
     function isFullOfMolecules()
     {
-        $isFull = array_sum($this->storageMolecules) >= 10;
+        $isFull = $this->sumStorage >= 10;
         if ($isFull) {
             error_log('Player is full of molecules');
         }
