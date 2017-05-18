@@ -59,6 +59,13 @@ class Player
         $firstUndiagnosedSample = $this->getFirstUndiagnosedSample();
         if (!is_null($firstUndiagnosedSample)) {
             echo("CONNECT $firstUndiagnosedSample\n");
+        } else if($this->numberOfSampleCarryByUs() < 3) {
+            $cloudSampleId = $this->getBestCloudSampleCanBeProduced();
+            if (is_null($cloudSampleId) && $this->hasAtLeastOneSampleCanBeProduced()) {
+                $this->goToModule(Module::MOLECULES);
+            } else {
+                echo("CONNECT $cloudSampleId\n");
+            }
         } else if ($this->hasAtLeastOneSampleCanBeProduced()) {
             $this->goToModule(Module::MOLECULES);
         } else {
@@ -166,6 +173,17 @@ class Player
 
         error_log('No molecule to take');
         return null;
+    }
+
+    function numberOfSampleCarryByUs() {
+        $n = 0;
+
+        foreach ($this->samples as $sample) {
+            if ($sample->carriedBy == 0) {
+                $n++;
+            }
+        }
+        return $n;
     }
 
     function updateSamples()
