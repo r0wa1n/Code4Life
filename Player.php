@@ -124,9 +124,9 @@ class Player
     function generateRank()
     {
         $sumExpertise = array_sum($this->expertiseMolecules);
-        if ($sumExpertise >= 9) {
+        if ($sumExpertise >= 12 && $this->numberOfRankInMyPossession(3) <= 1) {
             return 3;
-        } else if ($sumExpertise >= 6) {
+        } else if ($sumExpertise >= 8 && $this->numberOfRankInMyPossession(2) <= 1) {
             return 2;
         } else {
             return 1;
@@ -165,7 +165,15 @@ class Player
 
         return null;
     }
-
+    function numberOfRankInMyPossession($rank) {
+        $n = 0;
+        foreach ($this->samples as $sample) {
+            if ($sample->carriedBy == 0 && $sample->rank == 3) {
+                $n++;
+            }
+        }
+        return $n;
+    }
     function findWhichMoleculeTakeForSample()
     {
         foreach ($this->samples as $sample) {
