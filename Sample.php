@@ -29,13 +29,24 @@ class Sample
             && $this->costs['e'] <= $storageMolecules['e'];
     }
 
-    function canBeProduced($availableMolecules, $storageMolecules)
+    function canBeProduced($availableMolecules, $storageMolecules, $slotsAvailable)
     {
         $canBeProduced = $this->costs['a'] <= $storageMolecules['a'] + $availableMolecules['a']
             && $this->costs['b'] <= $storageMolecules['b'] + $availableMolecules['b']
             && $this->costs['c'] <= $storageMolecules['c'] + $availableMolecules['c']
             && $this->costs['d'] <= $storageMolecules['d'] + $availableMolecules['d']
             && $this->costs['e'] <= $storageMolecules['e'] + $availableMolecules['e'];
+
+        // Check available slots
+        if ($canBeProduced) {
+            $countWantedMolecules = max(0, $this->costs['a'] - $storageMolecules['a'])
+                + max(0, $this->costs['b'] - $storageMolecules['b'])
+                + max(0, $this->costs['c'] - $storageMolecules['c'])
+                + max(0, $this->costs['d'] - $storageMolecules['d'])
+                + max(0, $this->costs['e'] - $storageMolecules['e']);
+
+            $canBeProduced &= $countWantedMolecules <= $slotsAvailable;
+        }
 
         error_log("Sample " . $this->sampleId . ' ' . (($canBeProduced) ? 'can' : 'can\'t') . ' be produced');
 

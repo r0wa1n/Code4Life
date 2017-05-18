@@ -61,10 +61,10 @@ class Player
         $firstUndiagnosedSample = $this->getFirstUndiagnosedSample();
         if (!is_null($firstUndiagnosedSample)) {
             echo("CONNECT $firstUndiagnosedSample\n");
-        } else if($this->numberOfSampleCarryByUs() < 3) {
+        } else if ($this->numberOfSampleCarryByUs() < 3) {
             $cloudSampleId = $this->getBestCloudSampleCanBeProduced();
             error_log("Cloud sample id : $cloudSampleId");
-            if (is_null($cloudSampleId)){
+            if (is_null($cloudSampleId)) {
                 if ($this->hasAtLeastOneSampleCanBeProduced()) {
                     $this->goToModule(Module::MOLECULES);
                 } else {
@@ -169,7 +169,9 @@ class Player
 
         return null;
     }
-    function numberOfRankInMyPossession($rank) {
+
+    function numberOfRankInMyPossession($rank)
+    {
         $n = 0;
         foreach ($this->samples as $sample) {
             if ($sample->carriedBy == 0 && $sample->rank == $rank) {
@@ -178,12 +180,13 @@ class Player
         }
         return $n;
     }
+
     function findWhichMoleculeTakeForSample()
     {
         foreach ($this->samples as $sample) {
             if ($sample->carriedBy == 0
                 && !$sample->completed
-                && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules)
+                && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable())
             ) {
                 return $sample->getFirstMoleculeMissing($this->storageMolecules);
             }
@@ -193,7 +196,8 @@ class Player
         return null;
     }
 
-    function numberOfSampleCarryByUs() {
+    function numberOfSampleCarryByUs()
+    {
         $n = 0;
 
         foreach ($this->samples as $sample) {
@@ -210,7 +214,9 @@ class Player
         if (is_null($this->getFirstUndiagnosedSample())) {
             $cacheSampleCanBeProduced = [];
             foreach ($this->samples as $sample) {
-                $cacheSampleCanBeProduced[$sample->sampleId] = $sample->canBeProduced($this->availableMolecules, $this->storageMolecules);
+                if ($sample->carriedBy == 0) {
+                    $cacheSampleCanBeProduced[$sample->sampleId] = $sample->canBeProduced($this->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable());
+                }
             }
             uasort($this->samples, function ($s1, $s2) use ($cacheSampleCanBeProduced) {
                 if ($s1->carriedBy == 0 && $s2->carriedBy != 0) {
@@ -261,7 +267,7 @@ class Player
     {
         foreach ($this->samples as $sample) {
             if ($sample->carriedBy == 0
-                && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules)
+                && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable())
             ) {
                 error_log('Sample ' . $sample->sampleId . ' can be produced');
 
@@ -278,7 +284,7 @@ class Player
         $bestId = null;
         foreach ($this->samples as $sample) {
             if ($sample->carriedBy == -1
-                && $sample->health > $best && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules)
+                && $sample->health > $best && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable())
             ) {
                 $best = $sample->health;
                 $bestId = $sample->sampleId;
@@ -321,6 +327,11 @@ class Player
         }
 
         return $isFull;
+    }
+
+    function getSlotsAvailable()
+    {
+        return 10 - $this->sumStorage;
     }
 
     function isMoving()
