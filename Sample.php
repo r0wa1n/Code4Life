@@ -55,18 +55,21 @@ class Sample
 
     function getFirstMoleculeMissing($storageMolecules)
     {
-        $this->shuffleCosts();
         foreach ($this->costs as $molecule => $count) {
             if ($count > $storageMolecules[$molecule]) {
                 return strtoupper($molecule);
             }
         }
-
         return null;
     }
 
-    function shuffleCosts()
-    {
-        uksort($this->costs, function() { return rand() > rand(); });
+    function timeToCompleteIt($storageMolecules) {
+        $timeToFinishIt = 0;
+        foreach ($this->costs as $molecule => $count) {
+            if ($count > $storageMolecules[$molecule]) {
+                $timeToFinishIt += $count - $storageMolecules[$molecule];
+            }
+        }
+        return $timeToFinishIt;
     }
 }

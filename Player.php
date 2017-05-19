@@ -2,7 +2,7 @@
 
 class Player
 {
-
+    public $game;
     public $target;
     public $score;
     public $eta;
@@ -93,8 +93,10 @@ class Player
     function moleculesModule()
     {
         $this->logMySamples();
-        if (($this->isFullOfMolecules() || is_null($this->findWhichMoleculeTakeForSample())) && $this->hasAtLeastOneCompletedSample()) {
+        if (($this->isFullOfMolecules() || is_null($this->findWhichMoleculeTakeForSample()) || !$this->hasTimeToFinishOtherOne()) && $this->hasAtLeastOneCompletedSample()) {
             $this->goToModule(Module::LABORATORY);
+        } else if(false) {
+            //TODO Si pas le temps d'en faire un et que aucun complété, prendre des molécules utiles à l'adversaire
         } else if (!$this->hasAtLeastOneSampleCanBeProduced()) {
             if ($this->otherPlayer->target == Module::LABORATORY) {
                 echo("WAIT\n");
@@ -125,16 +127,65 @@ class Player
 
     function generateRank()
     {
-        $sumExpertise = array_sum($this->expertiseMolecules);
-        if ($sumExpertise >= 12 && $this->numberOfRankInMyPossession(3) <= 1) {
-            return 3;
-        } else if ($sumExpertise >= 8 && $this->numberOfRankInMyPossession(2) <= 1) {
-            return 2;
-        } else {
-            $rank = 1;
+        $sumMissingExpertise = $this->getSumMissingExpertise();
+
+        if($sumMissingExpertise) {
+            if($this->numberOfRankInMyPossession(1) < 1) {
+                return 1;
+            } else if($this->numberOfRankInMyPossession(2) < 1) {
+                return 2;
+            }
         }
 
-        return $rank;
+        $sumExpertise = array_sum($this->expertiseMolecules);
+        if (($sumExpertise >= 10 && $this->numberOfRankInMyPossession(3) < 1) || ($sumExpertise >= 15 && $this->numberOfRankInMyPossession(3) < 2)) {
+            return 3;
+        } else if ($sumExpertise >= 7 && $this->numberOfRankInMyPossession(2) <= 1) {
+            return 2;
+        } else {
+            return 1;
+        }
+    }
+
+    function getSumMissingExpertise() {
+        $oneProjectSoonFinish = false;
+        foreach($this->game->projects as $project) {
+            $projectSoonFinish = true;
+            foreach($project->costs as $molecule => $count) {
+                if ($count - $this->expertiseMolecules[$molecule] > 1 && $count - $this->expertiseMolecules[$molecule] > 0) {
+                    $projectSoonFinish = false;
+                }
+            }
+            !$projectSoonFinish ?:$oneProjectSoonFinish = true;
+        }
+        if($oneProjectSoonFinish) {
+
+            $oneProjectSoonFinish = false;
+            foreach($this->game->projects as $project) {
+                $projectSoonFinish = 0;
+                foreach($project->costs as $molecule => $count) {
+                    if ($count - $this->expertiseMolecules[$molecule] == 0) {
+                        $projectSoonFinish++;
+                    }
+                }
+                $projectSoonFinish != 5?:$oneProjectSoonFinish = true;
+            }
+        }
+        return $oneProjectSoonFinish;
+    }
+
+    function hasTimeToFinishOtherOne() {
+        foreach ($this->samples as $sample) {
+            if ($sample->carriedBy == 0 && !$sample->completed
+                && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable())) {
+                $timeToFinishSampleAndGoPutIt = $sample->timeToCompleteIt($this->storageMolecules) + 3 + 1; //3: movement between MOLECULE and LABORATORY and 1 for connect
+                error_log("Temps pour finir le sample : $timeToFinishSampleAndGoPutIt");
+                if($this->game->turn + $timeToFinishSampleAndGoPutIt < 200) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     function getFirstUndiagnosedSample()

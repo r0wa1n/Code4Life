@@ -13,6 +13,8 @@ class Game
     {
         $this->p1 = new Player();
         $this->p2 = new Player();
+
+        $this->p1->game = $this;
     }
 
     function next()
