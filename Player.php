@@ -84,11 +84,13 @@ class Player
     function moleculesModule()
     {
         $this->logMySamples();
-        if (($this->isFullOfMolecules() || is_null($this->findWhichMoleculeTakeForSample(false)) || !$this->hasTimeToFinishOtherOne(3)) && $this->hasAtLeastOneCompletedSample()) {
+
+        if (($this->isFullOfMolecules() || !$this->hasTimeToFinishOtherOne($this->matrice[Module::MOLECULES][Module::LABORATORY])) && $this->hasAtLeastOneCompletedSample()) {
             $this->goToModule(Module::LABORATORY);
-        } else if (false) {
-            //TODO Si pas le temps d'en faire un et que aucun complété, prendre des molécules utiles à l'adversaire
-            //!$this->isFullOfMolecules() && !$this->hasTimeToFinishOtherOne(3) && !$this->hasAtLeastOneCompletedSample()
+        } else if (!is_null($moleculeToScrew = $this->checkIfWeCanScrewOpponentMolecule())) {
+            echo ("CONNECT $moleculeToScrew\n");
+        } else if (is_null($this->findWhichMoleculeTakeForSample(false)) && $this->hasAtLeastOneCompletedSample()) {
+            $this->goToModule(Module::LABORATORY);
         } else if (!$this->hasAtLeastOneSampleCanBeProduced()) {
             if ($this->opponent->target == Module::LABORATORY) {
                 echo("WAIT\n");
@@ -100,6 +102,27 @@ class Player
             echo("CONNECT $moleculeToTake\n");
         } else {
             $this->goToModule(Module::DIAGNOSIS);
+        }
+    }
+
+    function checkIfWeCanScrewOpponentMolecule()
+    {
+        if ($this->isFullOfMolecules() || $this->opponent->target == Module::MOLECULES) {
+            return null;
+        } else {
+            foreach ($this->samples as $sample) {
+                if ($sample->carriedBy == $this->opponent->carriedBy && $sample->health == -1 && $sample->canBeProduced($this->game->availableMolecules, $this->opponent->storageMolecules, $this->opponent->getSlotsAvailable())) {
+                    $missingMolecules = $sample->getMissingMolecules($this->opponent->storageMolecules);
+                    // Check if for all missing molecules, if i can screw him one
+                    foreach ($missingMolecules as $molecule => $missingCount) {
+                        if ($this->game->availableMolecules[$molecule] - $missingCount == 0) {
+                            return $molecule;
+                        }
+                    }
+                }
+            }
+
+            return null;
         }
     }
 
@@ -227,6 +250,17 @@ class Player
     {
         foreach ($this->samples as $sample) {
             if ($sample->carriedBy == $this->carriedBy && $sample->completed) {
+                return $sample->sampleId;
+            }
+        }
+
+        return null;
+    }
+
+    function getFirstUnProducedSample()
+    {
+        foreach ($this->samples as $sample) {
+            if ($sample->carriedBy == $this->carriedBy && !$sample->completed && !$sample->canBeProduced($this->game->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable())) {
                 return $sample->sampleId;
             }
         }

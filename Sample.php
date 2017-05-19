@@ -53,6 +53,19 @@ class Sample
         return $canBeProduced;
     }
 
+    function getMissingMolecules($storageMolecules)
+    {
+        $missingMolecules = [];
+        foreach ($this->costs as $molecule => $count) {
+            $missingMolecule = $count - $storageMolecules[$molecule];
+            if ($missingMolecule > 0) {
+                $missingMolecules[$molecule] = $missingMolecule;
+            }
+        }
+
+        return $missingMolecules;
+    }
+
     function getFirstMoleculeMissing($storageMolecules, Player $opponent = null)
     {
         $neededMolecules = [];
@@ -77,7 +90,8 @@ class Sample
         }
     }
 
-    function timeToCompleteIt($storageMolecules) {
+    function timeToCompleteIt($storageMolecules)
+    {
         $timeToFinishIt = 0;
         foreach ($this->costs as $molecule => $count) {
             if ($count > $storageMolecules[$molecule]) {
