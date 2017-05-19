@@ -61,7 +61,7 @@ class Player
         $firstUndiagnosedSample = $this->getFirstUndiagnosedSample();
         if (!is_null($firstUndiagnosedSample)) {
             echo("CONNECT $firstUndiagnosedSample\n");
-        } else if(!$this->hasTimeToFinishOtherOne(4) && $this->hasAtLeastOneCompletedSample()) {
+        } else if((!$this->hasTimeToFinishOtherOne(4) && $this->hasAtLeastOneCompletedSample()) || $this->getNumberCompletedSamples() >= 2) {
             $this->goToModule(Module::LABORATORY);
         } else if ($this->numberOfSampleCarryByUs() < 3) {
             $cloudSampleId = $this->getBestCloudSampleCanBeProduced();
@@ -99,6 +99,7 @@ class Player
             $this->goToModule(Module::LABORATORY);
         } else if(false) {
             //TODO Si pas le temps d'en faire un et que aucun complété, prendre des molécules utiles à l'adversaire
+            //!$this->isFullOfMolecules() && !$this->hasTimeToFinishOtherOne(3) && !$this->hasAtLeastOneCompletedSample()
         } else if (!$this->hasAtLeastOneSampleCanBeProduced()) {
             if ($this->otherPlayer->target == Module::LABORATORY) {
                 echo("WAIT\n");
@@ -129,7 +130,7 @@ class Player
 
     function generateRank()
     {
-        $sumMissingExpertise = $this->getSumMissingExpertise();
+        /*$sumMissingExpertise = $this->getSumMissingExpertise();
 
         if($sumMissingExpertise) {
             if($this->numberOfRankInMyPossession(1) < 1) {
@@ -137,7 +138,7 @@ class Player
             } else if($this->numberOfRankInMyPossession(2) < 1) {
                 return 2;
             }
-        }
+        }*/
 
         $sumExpertise = array_sum($this->expertiseMolecules);
         if (($sumExpertise >= 10 && $this->numberOfRankInMyPossession(3) < 1) || ($sumExpertise >= 15 && $this->numberOfRankInMyPossession(3) < 2)) {
@@ -221,6 +222,18 @@ class Player
         }
 
         return null;
+    }
+
+    function getNumberCompletedSamples()
+    {
+        $n = 0;
+        foreach ($this->samples as $sample) {
+            if ($sample->carriedBy == 0 && $sample->completed) {
+                $n++;
+            }
+        }
+
+        return $n;
     }
 
     function numberOfRankInMyPossession($rank)
