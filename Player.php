@@ -285,7 +285,7 @@ class Player
                     $cacheSampleCanBeProduced[$sample->sampleId] = $sample->canBeProduced($this->game->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable());
                 }
             }
-            uasort($this->samples, function ($s1, $s2) use ($cacheSampleCanBeProduced) {
+            uasort($this->samples, function (Sample $s1, Sample $s2) use ($cacheSampleCanBeProduced) {
                 if ($s1->carriedBy == $this->carriedBy && $s2->carriedBy != $this->carriedBy) {
                     return -1;
                 } else if ($s1->carriedBy != $this->carriedBy && $s2->carriedBy == $this->carriedBy) {
@@ -300,10 +300,10 @@ class Player
                     } else if (!$cacheSampleCanBeProduced[$s1->sampleId] && !$cacheSampleCanBeProduced[$s2->sampleId]) {
                         return 0;
                     } else {
-                        if ($s1->health == $s2->health) {
+                        if ($s1->getHealthPerMolecule() == $s2->getHealthPerMolecule()) {
                             return 0;
                         }
-                        return ($s1->health > $s2->health) ? -1 : 1;
+                        return ($s1->getHealthPerMolecule() > $s2->getHealthPerMolecule()) ? -1 : 1;
                     }
                 }
             });
@@ -351,7 +351,7 @@ class Player
         $bestId = null;
         foreach ($this->samples as $sample) {
             if ($sample->carriedBy == -1
-                && $sample->health > $best && $sample->canBeProduced($this->game->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable())
+                && $sample->rank > 1 && $sample->health > $best && $sample->canBeProduced($this->game->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable())
             ) {
                 $best = $sample->health;
                 $bestId = $sample->sampleId;
