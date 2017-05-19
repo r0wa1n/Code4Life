@@ -59,20 +59,11 @@ class Player
         $firstUndiagnosedSample = $this->getFirstUndiagnosedSample();
         if (!is_null($firstUndiagnosedSample)) {
             echo("CONNECT $firstUndiagnosedSample\n");
-        } else if (!$this->hasTimeToFinishOtherOne(4) && $this->hasAtLeastOneCompletedSample()) {
+        } else if (!$this->hasTimeToFinishOtherOne($this->matrice[Module::DIAGNOSIS][Module::LABORATORY]) && $this->hasAtLeastOneCompletedSample()) {
+            error_log('Game is almost finished, go complete a sample');
             $this->goToModule(Module::LABORATORY);
-        } else if ($this->numberOfSampleCarryByUs() < 3) {
-            $cloudSampleId = $this->getBestCloudSampleCanBeProduced();
-            error_log("Cloud sample id : $cloudSampleId");
-            if (is_null($cloudSampleId)) {
-                if ($this->hasAtLeastOneSampleCanBeProduced()) {
-                    $this->goToModule(Module::MOLECULES);
-                } else {
-                    $this->goToModule(Module::SAMPLES);
-                }
-            } else {
-                echo("CONNECT $cloudSampleId\n");
-            }
+        } else if ($this->numberOfSamplesCarriedByUs() < 3) {
+            $this->manageCloudSamples();
         } else if ($this->hasAtLeastOneSampleCanBeProduced()) {
             $this->goToModule(Module::MOLECULES);
         } else {
@@ -144,6 +135,24 @@ class Player
             return 2;
         } else {
             return 1;
+        }
+    }
+
+    function manageCloudSamples()
+    {
+        $cloudSampleId = $this->getBestCloudSampleCanBeProduced();
+        if (is_null($cloudSampleId)) {
+            error_log('No cloud sample which can be produced found');
+            if ($this->hasAtLeastOneSampleCanBeProduced()) {
+                error_log('Going to molecule to produce one of mine');
+                $this->goToModule(Module::MOLECULES);
+            } else {
+                error_log('Going to samples module to take new ones');
+                $this->goToModule(Module::SAMPLES);
+            }
+        } else {
+            error_log('Take sample ' . $cloudSampleId . ' from the cloud');
+            echo("CONNECT $cloudSampleId\n");
         }
     }
 
@@ -250,7 +259,7 @@ class Player
         return null;
     }
 
-    function numberOfSampleCarryByUs()
+    function numberOfSamplesCarriedByUs()
     {
         $n = 0;
 
@@ -334,6 +343,7 @@ class Player
 
     function getBestCloudSampleCanBeProduced()
     {
+        error_log('Search sample inside the cloud which can be produced');
         $best = 0;
         $bestId = null;
         foreach ($this->samples as $sample) {
@@ -344,6 +354,7 @@ class Player
                 $bestId = $sample->sampleId;
             }
         }
+
         return $bestId;
     }
 
