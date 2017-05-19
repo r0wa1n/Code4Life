@@ -61,6 +61,8 @@ class Player
         $firstUndiagnosedSample = $this->getFirstUndiagnosedSample();
         if (!is_null($firstUndiagnosedSample)) {
             echo("CONNECT $firstUndiagnosedSample\n");
+        } else if(!$this->hasTimeToFinishOtherOne(4) && $this->hasAtLeastOneCompletedSample()) {
+            $this->goToModule(Module::LABORATORY);
         } else if ($this->numberOfSampleCarryByUs() < 3) {
             $cloudSampleId = $this->getBestCloudSampleCanBeProduced();
             error_log("Cloud sample id : $cloudSampleId");
@@ -93,7 +95,7 @@ class Player
     function moleculesModule()
     {
         $this->logMySamples();
-        if (($this->isFullOfMolecules() || is_null($this->findWhichMoleculeTakeForSample()) || !$this->hasTimeToFinishOtherOne()) && $this->hasAtLeastOneCompletedSample()) {
+        if (($this->isFullOfMolecules() || is_null($this->findWhichMoleculeTakeForSample()) || !$this->hasTimeToFinishOtherOne(3)) && $this->hasAtLeastOneCompletedSample()) {
             $this->goToModule(Module::LABORATORY);
         } else if(false) {
             //TODO Si pas le temps d'en faire un et que aucun complété, prendre des molécules utiles à l'adversaire
@@ -174,11 +176,11 @@ class Player
         return $oneProjectSoonFinish;
     }
 
-    function hasTimeToFinishOtherOne() {
+    function hasTimeToFinishOtherOne($distance) {
         foreach ($this->samples as $sample) {
             if ($sample->carriedBy == 0 && !$sample->completed
                 && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable())) {
-                $timeToFinishSampleAndGoPutIt = $sample->timeToCompleteIt($this->storageMolecules) + 3 + 1; //3: movement between MOLECULE and LABORATORY and 1 for connect
+                $timeToFinishSampleAndGoPutIt = $sample->timeToCompleteIt($this->storageMolecules) + $distance + 1; //3: movement between MOLECULE and LABORATORY and 1 for connect
                 error_log("Temps pour finir le sample : $timeToFinishSampleAndGoPutIt");
                 if($this->game->turn + $timeToFinishSampleAndGoPutIt < 200) {
                     return true;
