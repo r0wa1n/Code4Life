@@ -100,4 +100,13 @@ class Sample
         }
         return $timeToFinishIt;
     }
+
+    function getHealthPerMolecule() {
+        $healthPerMolecule = $this->health;
+        $numberOfMolecule = 0;
+        foreach ($this->costs as $molecule => $count) {
+            $numberOfMolecule += $count;
+        }
+        return $healthPerMolecule/$numberOfMolecule;
+    }
 }
