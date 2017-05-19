@@ -12,9 +12,15 @@ class Game
     function __construct()
     {
         $this->p1 = new Player();
-        $this->p2 = new Player();
-
+        $this->p1->carriedBy = 0;
         $this->p1->game = $this;
+
+        $this->p2 = new Player();
+        $this->p2->carriedBy = 1;
+        $this->p2->game = $this;
+
+        $this->p1->opponent = $this->p2;
+        $this->p2->opponent = $this->p1;
     }
 
     function next()
@@ -77,7 +83,10 @@ class Game
         $this->p1->samples = $this->samples;
         $this->p1->sumStorage = array_sum($this->p1->storageMolecules);
         $this->p1->updateSamples();
+
         $this->p2->samples = $this->samples;
+        $this->p2->sumStorage = array_sum($this->p2->storageMolecules);
+        $this->p2->updateSamples();
     }
 
     function scanPlayer(Player $p)
@@ -127,8 +136,6 @@ class Game
             $this->availableMolecules['d'],
             $this->availableMolecules['e']
         );
-
-        $this->p1->availableMolecules = $this->availableMolecules;
     }
 
     function generateRandomWord()

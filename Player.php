@@ -8,10 +8,8 @@ class Player
     public $eta;
     public $storageMolecules = [];
     public $expertiseMolecules = [];
-    public $availableMolecules = [];
-    public $otherPlayer;
-
-    // custom properties
+    public $carriedBy;
+    public $opponent;
     public $samples = [];
     public $sumStorage;
 
@@ -95,19 +93,19 @@ class Player
     function moleculesModule()
     {
         $this->logMySamples();
-        if (($this->isFullOfMolecules() || is_null($this->findWhichMoleculeTakeForSample()) || !$this->hasTimeToFinishOtherOne(3)) && $this->hasAtLeastOneCompletedSample()) {
+        if (($this->isFullOfMolecules() || is_null($this->findWhichMoleculeTakeForSample(false)) || !$this->hasTimeToFinishOtherOne(3)) && $this->hasAtLeastOneCompletedSample()) {
             $this->goToModule(Module::LABORATORY);
-        } else if(false) {
+        } else if (false) {
             //TODO Si pas le temps d'en faire un et que aucun complété, prendre des molécules utiles à l'adversaire
             //!$this->isFullOfMolecules() && !$this->hasTimeToFinishOtherOne(3) && !$this->hasAtLeastOneCompletedSample()
         } else if (!$this->hasAtLeastOneSampleCanBeProduced()) {
-            if ($this->otherPlayer->target == Module::LABORATORY) {
+            if ($this->opponent->target == Module::LABORATORY) {
                 echo("WAIT\n");
             } else {
                 $this->goToModule(Module::DIAGNOSIS);
             }
         } else if (!$this->isFullOfMolecules()) {
-            $moleculeToTake = $this->findWhichMoleculeTakeForSample();
+            $moleculeToTake = $this->findWhichMoleculeTakeForSample(true);
             echo("CONNECT $moleculeToTake\n");
         } else {
             $this->goToModule(Module::DIAGNOSIS);
@@ -132,10 +130,10 @@ class Player
     {
         /*$sumMissingExpertise = $this->getSumMissingExpertise();
 
-        if($sumMissingExpertise) {
-            if($this->numberOfRankInMyPossession(1) < 1) {
+        if ($sumMissingExpertise) {
+            if ($this->numberOfRankInMyPossession(1) < 1) {
                 return 1;
-            } else if($this->numberOfRankInMyPossession(2) < 1) {
+            } else if ($this->numberOfRankInMyPossession(2) < 1) {
                 return 2;
             }
         }*/
@@ -150,40 +148,43 @@ class Player
         }
     }
 
-    function getSumMissingExpertise() {
+    function getSumMissingExpertise()
+    {
         $oneProjectSoonFinish = false;
-        foreach($this->game->projects as $project) {
+        foreach ($this->game->projects as $project) {
             $projectSoonFinish = true;
-            foreach($project->costs as $molecule => $count) {
+            foreach ($project->costs as $molecule => $count) {
                 if ($count - $this->expertiseMolecules[$molecule] > 1 && $count - $this->expertiseMolecules[$molecule] > 0) {
                     $projectSoonFinish = false;
                 }
             }
-            !$projectSoonFinish ?:$oneProjectSoonFinish = true;
+            !$projectSoonFinish ?: $oneProjectSoonFinish = true;
         }
-        if($oneProjectSoonFinish) {
+        if ($oneProjectSoonFinish) {
 
             $oneProjectSoonFinish = false;
-            foreach($this->game->projects as $project) {
+            foreach ($this->game->projects as $project) {
                 $projectSoonFinish = 0;
-                foreach($project->costs as $molecule => $count) {
+                foreach ($project->costs as $molecule => $count) {
                     if ($count - $this->expertiseMolecules[$molecule] == 0) {
                         $projectSoonFinish++;
                     }
                 }
-                $projectSoonFinish != 5?:$oneProjectSoonFinish = true;
+                $projectSoonFinish != 5 ?: $oneProjectSoonFinish = true;
             }
         }
         return $oneProjectSoonFinish;
     }
 
-    function hasTimeToFinishOtherOne($distance) {
+    function hasTimeToFinishOtherOne($distance)
+    {
         foreach ($this->samples as $sample) {
-            if ($sample->carriedBy == 0 && !$sample->completed
-                && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable())) {
+            if ($sample->carriedBy == $this->carriedBy && !$sample->completed
+                && $sample->canBeProduced($this->game->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable())
+            ) {
                 $timeToFinishSampleAndGoPutIt = $sample->timeToCompleteIt($this->storageMolecules) + $distance + 1; //3: movement between MOLECULE and LABORATORY and 1 for connect
                 error_log("Temps pour finir le sample : $timeToFinishSampleAndGoPutIt");
-                if($this->game->turn + $timeToFinishSampleAndGoPutIt < 200) {
+                if ($this->game->turn + $timeToFinishSampleAndGoPutIt < 200) {
                     return true;
                 }
             }
@@ -194,7 +195,7 @@ class Player
     function getFirstUndiagnosedSample()
     {
         foreach ($this->samples as $sample) {
-            if ($sample->carriedBy == 0 && $sample->health == -1) {
+            if ($sample->carriedBy == $this->carriedBy && $sample->health == -1) {
                 return $sample->sampleId;
             }
         }
@@ -205,7 +206,7 @@ class Player
     function getFirstDiagnosedSample()
     {
         foreach ($this->samples as $sample) {
-            if ($sample->carriedBy == 0 && $sample->health != -1) {
+            if ($sample->carriedBy == $this->carriedBy && $sample->health != -1) {
                 return $sample->sampleId;
             }
         }
@@ -216,7 +217,7 @@ class Player
     function getFirstCompletedSample()
     {
         foreach ($this->samples as $sample) {
-            if ($sample->carriedBy == 0 && $sample->completed) {
+            if ($sample->carriedBy == $this->carriedBy && $sample->completed) {
                 return $sample->sampleId;
             }
         }
@@ -240,21 +241,21 @@ class Player
     {
         $n = 0;
         foreach ($this->samples as $sample) {
-            if ($sample->carriedBy == 0 && $sample->rank == $rank) {
+            if ($sample->carriedBy == $this->carriedBy && $sample->rank == $rank) {
                 $n++;
             }
         }
         return $n;
     }
 
-    function findWhichMoleculeTakeForSample()
+    function findWhichMoleculeTakeForSample($compareWithOpponent)
     {
         foreach ($this->samples as $sample) {
-            if ($sample->carriedBy == 0
+            if ($sample->carriedBy == $this->carriedBy
                 && !$sample->completed
-                && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable())
+                && $sample->canBeProduced($this->game->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable())
             ) {
-                return $sample->getFirstMoleculeMissing($this->storageMolecules);
+                return $sample->getFirstMoleculeMissing($this->storageMolecules, $compareWithOpponent ? $this->game->p2 : null);
             }
         }
 
@@ -267,7 +268,7 @@ class Player
         $n = 0;
 
         foreach ($this->samples as $sample) {
-            if ($sample->carriedBy == 0) {
+            if ($sample->carriedBy == $this->carriedBy) {
                 $n++;
             }
         }
@@ -280,16 +281,16 @@ class Player
         if (is_null($this->getFirstUndiagnosedSample())) {
             $cacheSampleCanBeProduced = [];
             foreach ($this->samples as $sample) {
-                if ($sample->carriedBy == 0) {
-                    $cacheSampleCanBeProduced[$sample->sampleId] = $sample->canBeProduced($this->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable());
+                if ($sample->carriedBy == $this->carriedBy) {
+                    $cacheSampleCanBeProduced[$sample->sampleId] = $sample->canBeProduced($this->game->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable());
                 }
             }
             uasort($this->samples, function ($s1, $s2) use ($cacheSampleCanBeProduced) {
-                if ($s1->carriedBy == 0 && $s2->carriedBy != 0) {
+                if ($s1->carriedBy == $this->carriedBy && $s2->carriedBy != $this->carriedBy) {
                     return -1;
-                } else if ($s1->carriedBy != 0 && $s2->carriedBy == 0) {
+                } else if ($s1->carriedBy != $this->carriedBy && $s2->carriedBy == $this->carriedBy) {
                     return 1;
-                } else if ($s1->carriedBy != 0 && $s2->carriedBy != 0) {
+                } else if ($s1->carriedBy != $this->carriedBy && $s2->carriedBy != $this->carriedBy) {
                     return 0;
                 } else {
                     if ($cacheSampleCanBeProduced[$s1->sampleId] && !$cacheSampleCanBeProduced[$s2->sampleId]) {
@@ -307,7 +308,7 @@ class Player
                 }
             });
             foreach ($this->samples as $sample) {
-                if ($sample->carriedBy == 0) {
+                if ($sample->carriedBy == $this->carriedBy) {
                     foreach ($sample->costs as $molecule => &$count) {
                         $count = max($count - $this->expertiseMolecules[$molecule], 0);
                     }
@@ -332,8 +333,8 @@ class Player
     function hasAtLeastOneSampleCanBeProduced()
     {
         foreach ($this->samples as $sample) {
-            if ($sample->carriedBy == 0
-                && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable())
+            if ($sample->carriedBy == $this->carriedBy
+                && $sample->canBeProduced($this->game->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable())
             ) {
                 error_log('Sample ' . $sample->sampleId . ' can be produced');
 
@@ -350,7 +351,7 @@ class Player
         $bestId = null;
         foreach ($this->samples as $sample) {
             if ($sample->carriedBy == -1
-                && $sample->health > $best && $sample->canBeProduced($this->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable())
+                && $sample->health > $best && $sample->canBeProduced($this->game->availableMolecules, $this->storageMolecules, $this->getSlotsAvailable())
             ) {
                 $best = $sample->health;
                 $bestId = $sample->sampleId;
@@ -363,7 +364,7 @@ class Player
     {
         $samplesCarriedByMe = 0;
         foreach ($this->samples as $sample) {
-            if ($sample->carriedBy == 0) {
+            if ($sample->carriedBy == $this->carriedBy) {
                 $samplesCarriedByMe++;
             }
         }
@@ -379,7 +380,7 @@ class Player
     function logMySamples()
     {
         foreach ($this->samples as $sample) {
-            if ($sample->carriedBy == 0) {
+            if ($sample->carriedBy == $this->carriedBy) {
                 $sample->log();
             }
         }
