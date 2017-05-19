@@ -116,6 +116,7 @@ class Player
                     // Check if for all missing molecules, if i can screw him one
                     foreach ($missingMolecules as $molecule => $missingCount) {
                         if ($this->game->availableMolecules[$molecule] - $missingCount == 0) {
+                            $this->game->sentences[] = "I have screwed you !!";
                             return $molecule;
                         }
                     }

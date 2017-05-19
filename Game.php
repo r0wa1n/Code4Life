@@ -9,6 +9,8 @@ class Game
     public $projects = [];
     public $availableMolecules = [];
 
+    public $sentences = [];
+
     function __construct()
     {
         $this->p1 = new Player();
@@ -29,7 +31,12 @@ class Game
         // Check if player is running
         if ($this->p1->isMoving()) {
             // Action will be ignored
-            echo($this->generateRandomWord() . "\n");
+            if (!empty($this->sentences)) {
+                echo(array_shift($this->sentences) . "\n");
+            } else {
+                echo("\n");
+            }
+
         } else {
             $this->decideWhatToDo();
         }
@@ -136,22 +143,5 @@ class Game
             $this->availableMolecules['d'],
             $this->availableMolecules['e']
         );
-    }
-
-    function generateRandomWord()
-    {
-        $sentence = [
-            'Astalavista baby',
-            'Yo bien ou bien ?',
-            'i want money',
-            'svp, argent !!',
-            'viens ici !',
-            'toi et moi <3',
-            'robots sucks',
-            'trololo',
-            'niancaaaaaaat'
-        ];
-
-        return $sentence[rand(0, count($sentence) - 1)];
     }
 }
