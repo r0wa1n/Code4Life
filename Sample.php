@@ -53,14 +53,28 @@ class Sample
         return $canBeProduced;
     }
 
-    function getFirstMoleculeMissing($storageMolecules)
+    function getFirstMoleculeMissing($storageMolecules, Player $opponent = null)
     {
+        $neededMolecules = [];
         foreach ($this->costs as $molecule => $count) {
             if ($count > $storageMolecules[$molecule]) {
-                return strtoupper($molecule);
+                $neededMolecules[] = $molecule;
             }
         }
-        return null;
+
+        if (empty($neededMolecules)) {
+            return null;
+        } else if (is_null($opponent)) {
+            return strtoupper($neededMolecules[0]);
+        } else {
+            // Check if opponent need one of these molecules
+            $opponentPriorityMolecule = $opponent->findWhichMoleculeTakeForSample(false);
+            if (!is_null($opponentPriorityMolecule) && in_array($opponentPriorityMolecule, $neededMolecules)) {
+                return strtoupper($opponentPriorityMolecule);
+            } else {
+                return strtoupper($neededMolecules[0]);
+            }
+        }
     }
 
     function timeToCompleteIt($storageMolecules) {
